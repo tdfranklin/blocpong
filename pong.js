@@ -87,14 +87,14 @@ function Paddle(x, y, width, height) {
 }
 
 function Player() {
-    this.paddle = new Paddle(2, (h / 2.5), 18, 100);
+    this.paddle = new Paddle(20, (h / 2.5), 18, 100);
     this.render = function() {
         this.paddle.render();
     };
 }
 
 function Computer() {
-    this.paddle = new Paddle((w - 21), (h / 2.5), 18, 100);
+    this.paddle = new Paddle((w - 40), (h / 2.5), 18, 100);
     this.render = function() {
         this.paddle.render();
     };
