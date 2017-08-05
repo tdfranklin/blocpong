@@ -5,10 +5,16 @@ var context = canvas.getContext("2d");
 canvas.width = w;
 canvas.height = h;
 var player = new Player();
+var playerPaddleSpeed = 15;
 var computer = new Computer();
+var computerPaddleSpeed = 10;
 var ball = new Ball((w / 2), (h / 2));
+var ballSpeed = getBallSpeed();
 var playerOneScore = 0;
 var playerTwoScore = 0;
+var endGameScore = 10;
+
+var keyPress = {};
 
 var animate = window.requestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
@@ -26,6 +32,7 @@ var render = function() {
 
 var update = function() {
     computer.update(ball);
+    player.update();
 };
 
 var step = function() {
@@ -33,6 +40,10 @@ var step = function() {
     render();
     animate(step);
 };
+
+function getBallSpeed(offset = 0) {
+    return -5 + offset;
+}
 
 function getRandInteger(min, max) {
     return Math.floor(Math.random() * (max - min) ) + min;
@@ -91,6 +102,18 @@ function Player() {
     this.render = function() {
         this.paddle.render();
     };
+    this.update = function() {
+        for (var key in keyPress) {
+            var value = Number(key);
+            if (value == 38) {
+                this.paddle.move(-10, 0);
+            } else if (value == 40) {
+                this.paddle.move(10, 0);
+            } else {
+                this.paddle.move(0, 0);
+            }
+        }
+    };
 }
 
 function Computer() {
@@ -102,9 +125,9 @@ function Computer() {
         var ballPos = ball.y;
 
         if (ballPos < (this.paddle.y)) {
-            this.paddle.move(-10);
+            this.paddle.move(-computerPaddleSpeed);
         } else if (ballPos > (this.paddle.y + 80)) {    
-            this.paddle.move(10);
+            this.paddle.move(computerPaddleSpeed);
         }
     };
 }
@@ -112,7 +135,7 @@ function Computer() {
 function Ball(x, y) {
     this.x = x;
     this.y = y;
-    this.x_speed = -5;
+    this.x_speed = getBallSpeed();
     this.y_speed = 0;
     this.radius = 8;
     this.render = function() {
@@ -124,16 +147,16 @@ function Ball(x, y) {
     this.move = function(paddle1, paddle2) {
         this.x += this.x_speed;
         this.y += this.y_speed;
-        this.left = this.x - 8;
-        this.top = this.y - 8;
-        this.right = this.x + 8;
-        this.bottom = this.y + 8;
+        this.left = this.x - this.radius;
+        this.top = this.y - this.radius;
+        this.right = this.x + this.radius;
+        this.bottom = this.y + this.radius;
 
         if (this.top < 0) {
-            this.y = 8;
+            this.y = this.radius;
             this.y_speed = -this.y_speed;
         } else if (this.bottom > h) {
-            this.y = h - 8;
+            this.y = h - this.radius;
             this.y_speed = -this.y_speed;
         }
 
@@ -143,14 +166,14 @@ function Ball(x, y) {
             if (this.left < (paddle1.x + paddle1.width) && this.right > paddle1.x &&
                 this.top < (paddle1.y + paddle1.height) && this.bottom > paddle1.y) {
                     this.x_speed *=  -1;
-                    this.y_speed += (paddle1.speed / 4);
+                    this.y_speed += (paddle1.speed / 3);
                     this.x += this.x_speed;
             }
         } else {
             if (this.left < (paddle2.x + paddle2.width) && this.right > paddle2.x &&
                 this.top < (paddle2.y + paddle2.height) && this.bottom > paddle2.y) {
                     this.x_speed *= -1;
-                    this.y_speed += (paddle2.speed / 4);
+                    this.y_speed += (paddle2.speed / 3);
                     this.x += this.x_speed;
             }
         }
@@ -160,17 +183,32 @@ function Ball(x, y) {
 function scoreGoal(ball) {
     if (ball.x < 0) {
         playerTwoScore += 1;
-        ball.x_speed = 5;
+        ball.x_speed = ballSpeed;
         ball.y_speed = 0;
         ball.x = (w / 2);
         ball.y = (h / 2);
+        endGame(ball);
     }
     if (ball.x > w) {
         playerOneScore += 1;
-        ball.x_speed = -5;
+        ball.x_speed = -ballSpeed;
         ball.y_speed = 0;
         ball.x = (w / 2);
         ball.y = (h / 2);
+        endGame(ball);
+    }
+}
+
+function endGame(ball) {
+    if (playerOneScore > endGameScore || playerTwoScore > endGameScore) {
+        ball.x_speed = 0;
+        playerOneScore > endGameScore ? (
+            alert('You won!  Congratulations!  Refresh the page to play again!')
+        ) : (
+            alert("I'm sorry, but it appears you've been bested!  Refresh the page to play again!")
+        )
+        playerOneScore = 0;
+        playerTwoScore = 0;
     }
 }
 
@@ -189,12 +227,11 @@ window.onload = function() {
 }
 
 window.addEventListener("keydown", function(event) {
-    var k = event.keyCode;
-    if (k == 38) {
-        player.paddle.move(-30);
-    } else if (k == 40) {
-        player.paddle.move(30);
-    }
+    keyPress[event.keyCode] = true;
+});
+
+window.addEventListener("keyup", function(event) {
+    delete keyPress[event.keyCode];
 });
 
 window.addEventListener("resize", resizeCanvas);
